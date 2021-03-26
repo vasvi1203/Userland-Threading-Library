@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <dirent.h>
+#include <sys/types.h>
 #include "thread.h"
 #define STACK 4096
 #define SLEEP_SEC 10
@@ -18,7 +19,7 @@ int thread_create(thread_t *thread, void *attr, void *(*start_routine)(void *), 
   }
 
   int (*start)(void *) = (void *)(*start_routine);      // convert (void *)(*start_routine) to int (*start)
-  *thread = clone(start, stack + STACK, CLONE_VM, NULL);
+  *thread = clone(start, stack + STACK, CLONE_VM | SIGCHLD, arg);
   if(*thread < 0) {
     perror("Thread error\n");
     return -1;
