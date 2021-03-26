@@ -18,7 +18,7 @@ int thread_create(thread_t *thread, void *attr, void *(*start_routine)(void *), 
   }
 
   int (*start)(void *) = (void *)(*start_routine);      // convert (void *)(*start_routine) to int (*start)
-  *thread = clone(start, stack + STACK, CLONE_VM|SIGCHLD, NULL);
+  *thread = clone(start, stack + STACK, CLONE_VM, NULL);
   if(*thread < 0) {
     perror("Thread error\n");
     return -1;
