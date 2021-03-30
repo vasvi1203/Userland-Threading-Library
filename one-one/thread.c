@@ -11,7 +11,7 @@
 #define STACK 4096
 #define SLEEP_SEC 10
 
-int thread_create(thread_t *thread, void *attr, void *(*start_routine)(void *), void *arg) {
+int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
   void *stack = malloc(STACK);    // Stack for new process
   if(!stack) {
     perror("Malloc Failed");
@@ -19,7 +19,8 @@ int thread_create(thread_t *thread, void *attr, void *(*start_routine)(void *), 
   }
 
   int (*start)(void *) = (void *)(*start_routine);      // convert (void *)(*start_routine) to int (*start)
-  *thread = clone(start, stack + STACK, CLONE_VM | SIGCHLD, arg);
+  *thread = clone(start, stack + STACK,CLONE_VM | CLONE_FS | CLONE_FILES |
+                   SIGCHLD | CLONE_CHILD_CLEARTID,arg);
   if(*thread < 0) {
     perror("Thread error\n");
     return -1;
