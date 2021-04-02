@@ -13,7 +13,6 @@ int args[4];
 
 void* fun(void* arg){
     // shared resource caused race condition
-    sleep(2);
     printf("tid : %d thread recevied arg: %d\n",getpid(),*(int *)arg);
     printf("parent id : %d\n",getppid());    
 }
