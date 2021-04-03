@@ -23,51 +23,15 @@
 
 pid_t ctid;
 
-int futex(int* uaddr, int futex_op, int val, const struct timespec* timeout,
-          int* uaddr2, int val3) {
-  return syscall(SYS_futex, uaddr, futex_op, val, timeout, uaddr2, val3);
-}
-
-void wait_on_futex_value(int* futex_addr, int val) {
-  while (1) {
-    int futex_rc = futex(futex_addr, FUTEX_WAIT_PRIVATE, val, NULL, NULL, 0);
-    if (futex_rc == -1) {
-      if (errno != EAGAIN) {
-        perror("futex");
-        exit(1);
-      }
-    } else if (futex_rc == 0) {
-      if (*futex_addr == val) {
-        // This is a real wakeup.
-        return;
-      }
-    } else {
-      abort();
-    }
-  }
-}
-
-void wake_futex_blocking(int* futex_addr) {
-//   while (1) {
-    int futex_rc = futex(futex_addr, FUTEX_WAKE_PRIVATE, 1, NULL, NULL, 0);
-    if (futex_rc == -1) {
-      perror("futex wake");
-      exit(1);
-    } else if (futex_rc > 0) {
-      return;
-    }
-  //}
-}
-
 int do_something(void* arg){
         // syscall(SYS_futex, &ctid, FUTEX_WAIT, 0, NULL, NULL, 0);
         printf("Child pid : %d                  [ from getpid() ]\n", getpid());
         printf("Argument : - %d\n",*(int *)arg);
         // sleep(10);
         printf("Child is returning\n");
-        sleep(5);
+       // sleep(5);
          printf("ctid in child futex: %d\n",ctid);
-         sleep(5);
+        // sleep(5);
        // wake_futex_blocking(&ctid);
         return 0;
 }
@@ -86,9 +50,9 @@ int main() {
                 perror("Clone Failed");
                 exit(0);
         }
-        printf("Parent waiting to start the thread\n");
-        printf("ctid before futex: %d\n",ctid);
        syscall(SYS_futex, &ctid, FUTEX_WAIT, 0, NULL, NULL, 0);
+       printf("Parent waiting to start the thread\n");
+       //printf("ctid before futex: %d\n",ctid);
         //printf("Parent waiting for child\n");
         //sleep(2);
         printf("ctid after futex: %d\n",ctid);
