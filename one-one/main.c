@@ -11,23 +11,28 @@
 void* fun(void* arg){
     // shared resource caused race condition
     sleep(5);
-    printf("thread : %d recevied arg: %d\n",getpid(),*(int *)arg);
-    printf("thread : %d returning\n",gettid());
+    printf("thread : %d received arg: %d\n", getpid(), *(int *)arg);
+    printf("thread exit : %d returning\n", gettid());
+    int *p = (int*)malloc(sizeof(int));
+    *p = 20;
+    thread_exit(p);
 }
 
 void* fun2(void* arg){
     sleep(2);
-    printf("thread : %d recevied nothing\n",getpid());
+    printf("thread : %d received nothing\n", gettid());
     sleep(4);
-    printf("thread : %d returning\n",gettid());
+    thread_kill(gettid(), 9);
+    printf("thread : %d returning\n", gettid());
 }
+
 int main(){
     thread_t t1,t2;
     // setbuf(stdout,NULL);
     int arg = 10;
     int* p = &arg;
     printf("main thread id : %d\n",getpid());
-    thread_create(&t1,&fun,p);
+    thread_create(&t1,&fun,(void*)p);
     thread_create(&t2,&fun2,NULL);
     printf("parent is waiting\n");
     thread_join(t1);

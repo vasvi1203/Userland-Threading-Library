@@ -43,7 +43,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
   thread_init(); 
   int (*start)(void *) = (void *)(*start_routine);      // convert (void *)(*start_routine) to int (*start)
   *thread = clone(start, stack + STACK,CLONE_VM | CLONE_FS | CLONE_FILES |
-                   CLONE_THREAD | CLONE_SIGHAND | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID ,arg,NULL,NULL,&( tcb_table[t_index].child_tid ) );
+                   CLONE_THREAD | CLONE_SIGHAND | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID ,arg,NULL,NULL,&(tcb_table[t_index].child_tid ));
   if(*thread < 0) {
     perror("Thread error\n");
     return -1;
@@ -54,14 +54,16 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
   return 0;
 }
 
-int thread_join(thread_t t){
-  int index = -1;
-  for(int i = 0; i < t_index; i++){
-    if(tcb_table[i].tid == t){
+int thread_join(thread_t thread){
+  int index = -1, i;
+
+  for(i = 0; i < t_index; i++){
+    if(tcb_table[i].tid == thread){
       index = i;
       break;
     }
   }
+
   if(index == -1 || index == t_index){
     perror("Invalid argument to thread join\n");
     exit(1);
@@ -70,5 +72,47 @@ int thread_join(thread_t t){
   // printf("In join index: %d waiting for %d\n",index,tcb_table[index].tid);
   syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, -1, NULL, NULL, 0);
   syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, tcb_table[index].tid, NULL, NULL, 0);
+
+  // printf("before%d\n", t_index);
+  // t_index--;
+  // for(i = index; i < t_index; i++) 
+  //   tcb_table[i] = tcb_table[i + 1];
+
+  // printf("after%d\n", t_index);
   // printf("Waited successfully for index: %d for %d\n",index,tcb_table[index].tid);
+}
+
+void thread_exit(void *retval) {
+  int i, thread;
+  printf("%d\n", *(int *)retval);
+  thread = gettid();
+  for(i = 0; i < t_index; i++) {
+    if(tcb_table[i].tid == thread) {
+      tcb_table[i].ret_val = malloc(sizeof(int));
+      *(int *)(tcb_table[i].ret_val) = *(int *)retval;
+      printf("enter\n");
+    }
+  }
+
+  // segfault!!check!!
+  printf("%d\n", *(int *)(tcb_table[i].ret_val));
+  syscall(SYS_exit, 0);
+}
+
+int thread_kill(thread_t thread, int sig) {
+  int tgid = getpid();
+  int i, index = -1;
+  for(i = 0; i < t_index; i++) {
+    if(tcb_table[i].tid == thread) {
+      index = i;
+      break;
+    }
+  }
+
+  if(index == -1 || index == t_index){
+    perror("Invalid argument to thread kill\n");
+    exit(0);
+  }
+
+  tgkill(tgid, thread, sig);
 }

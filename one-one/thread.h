@@ -1,10 +1,11 @@
 #define MAX_THREADS 128
 
+// Geeks For Geeks
 typedef struct tcb {
     int tid;
     int child_tid;
     int parent_tid;
-    void** ret_val;
+    void* ret_val;
 } tcb;
 
 tcb tcb_table[MAX_THREADS];
@@ -20,3 +21,5 @@ void thread_init(void);
 void thread_exit(void *retval);
 
 int thread_join(thread_t thread);
+
+int thread_kill(thread_t thread, int sig);
