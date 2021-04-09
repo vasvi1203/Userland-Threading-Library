@@ -8,6 +8,10 @@ typedef struct tcb {
     void* ret_val;
 } tcb;
 
+typedef struct spinlock{
+    int islocked;
+}spinlock;
+
 tcb tcb_table[MAX_THREADS];
 
 extern int t_index;
@@ -23,3 +27,9 @@ void thread_exit(void *retval);
 int thread_join(thread_t thread, void **retval);
 
 int thread_kill(thread_t thread, int sig);
+
+void init_spin_lock(spinlock* spin_lock);
+
+void acquire_spin_lock(spinlock* spin_lock);
+
+void release_spin_lock(spinlock* spin_lock);

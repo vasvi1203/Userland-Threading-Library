@@ -16,6 +16,18 @@
 
 int t_index = 0;
 
+int xchg(int *addr, int newval)
+{
+  int result;
+
+  // The + in "+m" denotes a read-modify-write operand.
+  asm volatile("lock; xchgl %0, %1" :
+               "+m" (*addr), "=a" (result) :
+               "1" (newval) :
+               "cc");
+  return result;
+}
+
 void print_thread(int index){
   printf("\n***************thread info: ****************\n");
   printf("\ttid\tfutex_word\tret_val\n");
@@ -26,7 +38,6 @@ void print_thread(int index){
 void thread_init(){
   tcb_table[t_index].tid = 0;
   tcb_table[t_index].child_tid = -1;
-  // tcb_table[t_index].parent_tid = -1;
   tcb_table[t_index].ret_val = NULL;
 }
 
@@ -80,11 +91,14 @@ int thread_join(thread_t thread, void **retval){
     *retval = tcb_table[index].ret_val;
   }
   // printf("before%d\n", t_index);
-  // t_index--;
-  // for(i = index; i < t_index; i++) 
-  //   tcb_table[i] = tcb_table[i + 1];
-
-  // printf("after%d\n", t_index);
+  
+  for(i = index; i < t_index-1; i++){
+    tcb_table[i].child_tid = tcb_table[i + 1].child_tid;
+    tcb_table[i].tid = tcb_table[i + 1].tid;
+    tcb_table[i].ret_val = tcb_table[i + 1].ret_val;
+  } 
+  t_index--;
+  printf("No of active threads : %d\n", t_index);
 }
 
 void thread_exit(void *retval) {
@@ -94,7 +108,6 @@ void thread_exit(void *retval) {
     if(tcb_table[i].tid == thread) {
       index = i;
       tcb_table[i].ret_val = retval;
-      printf("enter\n");
       break;
     }
   }
@@ -104,7 +117,7 @@ void thread_exit(void *retval) {
     exit(0);
   }
 
-  printf("%d\n", *(int *)(tcb_table[i].ret_val));
+  // printf("%d\n", *(int *)(tcb_table[i].ret_val));
   syscall(SYS_exit, 0);
 }
 
@@ -124,4 +137,37 @@ int thread_kill(thread_t thread, int sig) {
   }
 
   tgkill(tgid, thread, sig);
+}
+
+void init_spin_lock(spinlock* spin_lock){
+  spin_lock->islocked = 0;
+}
+
+// @credit:- xv6 code
+void acquire_spin_lock(spinlock* spin_lock){
+  // The xchg is atomic.
+  while(xchg( &( spin_lock->islocked), 1) != 0)
+    ;
+  
+  // Tell the C compiler and the processor to not move loads or stores
+  // past this point, to ensure that all the stores in the critical
+  // section are visible to other cores before the lock is released.
+  // Both the C compiler and the hardware may re-order loads and
+  // stores; __sync_synchronize() tells them both not to.
+  __sync_synchronize();
+
+}
+// @credit:- xv6 code
+void release_spin_lock(spinlock* spin_lock){
+  // Tell the C compiler and the processor to not move loads or stores
+  // past this point, to ensure that all the stores in the critical
+  // section are visible to other cores before the lock is released.
+  // Both the C compiler and the hardware may re-order loads and
+  // stores; __sync_synchronize() tells them both not to.
+   __sync_synchronize();
+
+  // Release the lock, equivalent to lk->locked = 0.
+  // This code can't use a C assignment, since it might
+  // not be atomic. A real OS would use C atomics here.
+  asm volatile("movl $0, %0" : "+m" (spin_lock->islocked) : );
 }

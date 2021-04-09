@@ -8,27 +8,48 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+spinlock lock;
+int c,c1,c2,run;
+c = 0;
+c1 = 0;
+c2 = 0;
+run = 1;
 void* fun(void* arg){
     // shared resource caused race condition
-    sleep(5);
-    printf("thread : %d received arg: %d\n", getpid(), *(int *)arg);
-    printf("thread exit : %d returning\n", gettid());
+    // sleep(5);
+    // printf("thread : %d received arg: %d\n", gettid(), *(int *)arg);
+    // printf("thread exit : %d returning\n", gettid());
+    // int *p = (int*)malloc(sizeof(int));
+    // *p = 20;
+    while(run){
+        acquire_spin_lock(&lock);
+        c++;
+        c1++;
+        release_spin_lock(&lock);
+    }
+    
     int *p = (int*)malloc(sizeof(int));
     *p = 20;
     thread_exit(p);
 }
 
 void* fun2(void* arg){
-    sleep(2);
-    printf("thread : %d received nothing\n", gettid());
-    sleep(4);
-    thread_kill(gettid(), 9);
-    printf("thread : %d returning\n", gettid());
+    // sleep(2);
+    // printf("thread : %d received nothing\n", gettid());
+    // sleep(4);
+    // // thread_kill(gettid(), 9);
+    // printf("thread : %d returning\n", gettid());
+    while(run){
+        acquire_spin_lock(&lock);
+        c++;
+        c2++;
+        release_spin_lock(&lock);
+    }
 }
 
 int main(){
     thread_t t1,t2;
-    // setbuf(stdout,NULL);
+    init_spin_lock(&lock);
     int arg = 10;
     void *ret;
     int* p = &arg;
@@ -36,11 +57,18 @@ int main(){
     thread_create(&t1,&fun,(void*)p);
     thread_create(&t2,&fun2,NULL);
     printf("parent is waiting\n");
+    sleep(1);
+    run = 0;
     thread_join(t1, &ret);
     thread_join(t2, NULL);
     int *p1 = (int *)ret;
-    printf("In main: %d ",*p1);
-    // sleep(7);
+    printf("In main: %d\n",*p1);
+    
     printf("parent waited successfully\n");
+    printf("\nChecking lock effect:-\n");
+    printf("c1 = %d\n",c1);
+    printf("c2 = %d\n",c2);
+    printf("c1 + c2 = %d\n",c1 + c2);
+    printf("c = %d\n",c);
     return 0;
 }
