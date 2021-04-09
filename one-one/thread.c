@@ -54,7 +54,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
   return 0;
 }
 
-int thread_join(thread_t thread){
+int thread_join(thread_t thread, void **retval){
   int index = -1, i;
 
   for(i = 0; i < t_index; i++){
@@ -67,34 +67,43 @@ int thread_join(thread_t thread){
   if(index == -1 || index == t_index){
     perror("Invalid argument to thread join\n");
     exit(1);
-  }
+  }    
+
   // print_thread(index);
   // printf("In join index: %d waiting for %d\n",index,tcb_table[index].tid);
   syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, -1, NULL, NULL, 0);
   syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, tcb_table[index].tid, NULL, NULL, 0);
 
+  // printf("Waited successfully for index: %d for %d\n",index,tcb_table[index].tid);
+ 
+  if(retval && tcb_table[index].ret_val) {
+    *retval = tcb_table[index].ret_val;
+  }
   // printf("before%d\n", t_index);
   // t_index--;
   // for(i = index; i < t_index; i++) 
   //   tcb_table[i] = tcb_table[i + 1];
 
   // printf("after%d\n", t_index);
-  // printf("Waited successfully for index: %d for %d\n",index,tcb_table[index].tid);
 }
 
 void thread_exit(void *retval) {
-  int i, thread;
-  printf("%d\n", *(int *)retval);
+  int i, thread, index = -1;
   thread = gettid();
   for(i = 0; i < t_index; i++) {
     if(tcb_table[i].tid == thread) {
-      tcb_table[i].ret_val = malloc(sizeof(int));
-      *(int *)(tcb_table[i].ret_val) = *(int *)retval;
+      index = i;
+      tcb_table[i].ret_val = retval;
       printf("enter\n");
+      break;
     }
   }
 
-  // segfault!!check!!
+  if(index == -1 || index == t_index){
+    perror("Invalid argument to thread kill\n");
+    exit(0);
+  }
+
   printf("%d\n", *(int *)(tcb_table[i].ret_val));
   syscall(SYS_exit, 0);
 }

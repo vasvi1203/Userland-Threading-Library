@@ -30,13 +30,16 @@ int main(){
     thread_t t1,t2;
     // setbuf(stdout,NULL);
     int arg = 10;
+    void *ret;
     int* p = &arg;
     printf("main thread id : %d\n",getpid());
     thread_create(&t1,&fun,(void*)p);
     thread_create(&t2,&fun2,NULL);
     printf("parent is waiting\n");
-    thread_join(t1);
-    thread_join(t2);
+    thread_join(t1, &ret);
+    thread_join(t2, NULL);
+    int *p1 = (int *)ret;
+    printf("In main: %d ",*p1);
     // sleep(7);
     printf("parent waited successfully\n");
     return 0;

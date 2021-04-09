@@ -20,6 +20,6 @@ void thread_init(void);
 
 void thread_exit(void *retval);
 
-int thread_join(thread_t thread);
+int thread_join(thread_t thread, void **retval);
 
 int thread_kill(thread_t thread, int sig);
