@@ -10,7 +10,17 @@ typedef struct tcb {
 
 typedef struct spinlock{
     int islocked;
-}spinlock;
+} spinlock;
+
+//typedef int thread_spinlock_t;
+
+extern int mutex_index;
+
+typedef struct mutex {
+    int islocked;
+    spinlock spin_lock;
+    int q[MAX_THREADS];         
+} mutex;
 
 tcb tcb_table[MAX_THREADS];
 
@@ -33,3 +43,11 @@ void init_spin_lock(spinlock* spin_lock);
 void acquire_spin_lock(spinlock* spin_lock);
 
 void release_spin_lock(spinlock* spin_lock);
+
+void init_mutex(mutex *m);
+
+void block(mutex *m, spinlock *sl);
+
+void release(mutex *m);
+
+void acquire(mutex *m);

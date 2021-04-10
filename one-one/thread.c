@@ -15,7 +15,7 @@
 #define SLEEP_SEC 10
 
 int t_index = 0;
-
+int mutex_index = 0;
 int xchg(int *addr, int newval)
 {
   int result;
@@ -90,15 +90,14 @@ int thread_join(thread_t thread, void **retval){
   if(retval && tcb_table[index].ret_val) {
     *retval = tcb_table[index].ret_val;
   }
-  // printf("before%d\n", t_index);
   
-  for(i = index; i < t_index-1; i++){
+  for(i = index; i < t_index - 1; i++){
     tcb_table[i].child_tid = tcb_table[i + 1].child_tid;
     tcb_table[i].tid = tcb_table[i + 1].tid;
     tcb_table[i].ret_val = tcb_table[i + 1].ret_val;
   } 
   t_index--;
-  printf("No of active threads : %d\n", t_index);
+  printf("No. of active threads : %d\n", t_index);
 }
 
 void thread_exit(void *retval) {
@@ -143,10 +142,18 @@ void init_spin_lock(spinlock* spin_lock){
   spin_lock->islocked = 0;
 }
 
+void init_mutex(mutex* m){
+  int i;
+  m->islocked = 0;
+  init_spin_lock(&m->spin_lock);
+  // for(i = 0; i < MAX_THREADS; i++) 
+  //   m->q[i] = 0;      // RUNNABLE
+}
+
 // @credit:- xv6 code
 void acquire_spin_lock(spinlock* spin_lock){
   // The xchg is atomic.
-  while(xchg( &( spin_lock->islocked), 1) != 0)
+  while(xchg(&(spin_lock->islocked), 1) != 0)
     ;
   
   // Tell the C compiler and the processor to not move loads or stores
@@ -171,3 +178,61 @@ void release_spin_lock(spinlock* spin_lock){
   // not be atomic. A real OS would use C atomics here.
   asm volatile("movl $0, %0" : "+m" (spin_lock->islocked) : );
 }
+
+void block(mutex *m, spinlock *sl) {
+  release_spin_lock(sl);
+  int thread = gettid();
+  int i, index, sched;
+  // for(i = 0; i < t_index; i++) {
+  //   if(tcb_table[i].tid == thread) {
+  //     index = i;
+  //     break;
+  //   }
+  // }
+
+  // if(index == -1 || index == t_index){
+  //   perror("Invalid argument to mutex block\n");
+  //   exit(0);
+  // }
+
+  // m->q[mutex_index] = tcb_table[index].tid;
+  // mutex_index++;
+  //syscall(SYS_futex, &(tcb_table[index].state), FUTEX_WAIT, 1, NULL, NULL, 0);
+  sched = sched_yield();
+  //printf("sched : %d\n", sched);
+  acquire_spin_lock(sl);
+}
+
+void release(mutex *m) {
+  int i, index;
+  acquire_spin_lock(&m->spin_lock);
+  m->islocked = 0;
+  // if(mutex_index) {
+  //   //printf("%d\n",mutex_index);
+  //   mutex_index--;
+  //   for(i = 0; i < t_index; i++) {
+  //     if(tcb_table[i].tid == m->q[mutex_index]) {
+  //       index = i;
+  //       break;
+  //     }
+  //   }
+
+  //   if(index == -1 || index == t_index){
+  //     perror("Invalid argument to thread kill\n");
+  //     exit(0);
+  //   }
+    
+  //   m->q[mutex_index] = 0;
+  // }
+  
+  release_spin_lock(&m->spin_lock);
+}
+
+void acquire(mutex *m) {
+  acquire_spin_lock(&m->spin_lock);
+  while(m->islocked)
+    block(m, &m->spin_lock);
+  m->islocked = 1;
+  release_spin_lock(&m->spin_lock);
+}
+

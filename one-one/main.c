@@ -9,11 +9,9 @@
 #include <fcntl.h>
 
 spinlock lock;
-int c,c1,c2,run;
-c = 0;
-c1 = 0;
-c2 = 0;
-run = 1;
+mutex m;
+int c = 0,c1 = 0,c2 = 0,run = 1;
+
 void* fun(void* arg){
     // shared resource caused race condition
     // sleep(5);
@@ -22,10 +20,10 @@ void* fun(void* arg){
     // int *p = (int*)malloc(sizeof(int));
     // *p = 20;
     while(run){
-        acquire_spin_lock(&lock);
+        acquire(&m);
         c++;
         c1++;
-        release_spin_lock(&lock);
+        release(&m);
     }
     
     int *p = (int*)malloc(sizeof(int));
@@ -40,16 +38,17 @@ void* fun2(void* arg){
     // // thread_kill(gettid(), 9);
     // printf("thread : %d returning\n", gettid());
     while(run){
-        acquire_spin_lock(&lock);
+        acquire(&m);
         c++;
         c2++;
-        release_spin_lock(&lock);
+        release(&m);
     }
 }
 
 int main(){
     thread_t t1,t2;
-    init_spin_lock(&lock);
+    //init_spin_lock(&lock);
+    init_mutex(&m);
     int arg = 10;
     void *ret;
     int* p = &arg;
