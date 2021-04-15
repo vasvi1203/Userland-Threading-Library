@@ -19,7 +19,7 @@ extern int mutex_index;
 typedef struct mutex {
     int islocked;
     spinlock spin_lock;
-    int q[MAX_THREADS];         
+    //int q[MAX_THREADS];         
 } mutex;
 
 tcb tcb_table[MAX_THREADS];
@@ -38,16 +38,16 @@ int thread_join(thread_t thread, void **retval);
 
 int thread_kill(thread_t thread, int sig);
 
-void init_spin_lock(spinlock* spin_lock);
+void thread_spin_init(spinlock* spin_lock);
 
-void acquire_spin_lock(spinlock* spin_lock);
+void thread_spin_lock(spinlock* spin_lock);
 
-void release_spin_lock(spinlock* spin_lock);
+void thread_spin_unlock(spinlock* spin_lock);
 
-void init_mutex(mutex *m);
+void thread_mutex_init(mutex *m);
 
-void block(mutex *m, spinlock *sl);
+void thread_mutex_block(mutex *m, spinlock *sl);
 
-void release(mutex *m);
+void thread_mutex_lock(mutex *m);
 
-void acquire(mutex *m);
+void thread_mutex_unlock(mutex *m);

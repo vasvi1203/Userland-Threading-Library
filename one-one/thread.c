@@ -138,20 +138,20 @@ int thread_kill(thread_t thread, int sig) {
   tgkill(tgid, thread, sig);
 }
 
-void init_spin_lock(spinlock* spin_lock){
+void thread_spin_init(spinlock* spin_lock){
   spin_lock->islocked = 0;
 }
 
-void init_mutex(mutex* m){
+void thread_mutex_init(mutex* m){
   int i;
   m->islocked = 0;
-  init_spin_lock(&m->spin_lock);
+  thread_spin_init(&m->spin_lock);
   // for(i = 0; i < MAX_THREADS; i++) 
   //   m->q[i] = 0;      // RUNNABLE
 }
 
 // @credit:- xv6 code
-void acquire_spin_lock(spinlock* spin_lock){
+void thread_spin_lock(spinlock* spin_lock){
   // The xchg is atomic.
   while(xchg(&(spin_lock->islocked), 1) != 0)
     ;
@@ -165,7 +165,7 @@ void acquire_spin_lock(spinlock* spin_lock){
 
 }
 // @credit:- xv6 code
-void release_spin_lock(spinlock* spin_lock){
+void thread_spin_unlock(spinlock* spin_lock){
   // Tell the C compiler and the processor to not move loads or stores
   // past this point, to ensure that all the stores in the critical
   // section are visible to other cores before the lock is released.
@@ -179,8 +179,8 @@ void release_spin_lock(spinlock* spin_lock){
   asm volatile("movl $0, %0" : "+m" (spin_lock->islocked) : );
 }
 
-void block(mutex *m, spinlock *sl) {
-  release_spin_lock(sl);
+void thread_mutex_block(mutex *m, spinlock *sl) {
+  thread_spin_unlock(sl);
   int thread = gettid();
   int i, index, sched;
   // for(i = 0; i < t_index; i++) {
@@ -200,12 +200,20 @@ void block(mutex *m, spinlock *sl) {
   //syscall(SYS_futex, &(tcb_table[index].state), FUTEX_WAIT, 1, NULL, NULL, 0);
   sched = sched_yield();
   //printf("sched : %d\n", sched);
-  acquire_spin_lock(sl);
+  thread_spin_lock(sl);
 }
 
-void release(mutex *m) {
+void thread_mutex_lock(mutex *m) {
+  thread_spin_lock(&m->spin_lock);
+  while(m->islocked)
+    thread_mutex_block(m, &m->spin_lock);
+  m->islocked = 1;
+  thread_spin_unlock(&m->spin_lock);
+}
+
+void thread_mutex_unlock(mutex *m) {
   int i, index;
-  acquire_spin_lock(&m->spin_lock);
+  thread_spin_lock(&m->spin_lock);
   m->islocked = 0;
   // if(mutex_index) {
   //   //printf("%d\n",mutex_index);
@@ -225,14 +233,6 @@ void release(mutex *m) {
   //   m->q[mutex_index] = 0;
   // }
   
-  release_spin_lock(&m->spin_lock);
-}
-
-void acquire(mutex *m) {
-  acquire_spin_lock(&m->spin_lock);
-  while(m->islocked)
-    block(m, &m->spin_lock);
-  m->islocked = 1;
-  release_spin_lock(&m->spin_lock);
+  thread_spin_unlock(&m->spin_lock);
 }
 

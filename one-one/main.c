@@ -20,10 +20,10 @@ void* fun(void* arg){
     // int *p = (int*)malloc(sizeof(int));
     // *p = 20;
     while(run){
-        acquire(&m);
+        thread_mutex_lock(&m);
         c++;
         c1++;
-        release(&m);
+        thread_mutex_unlock(&m);
     }
     
     int *p = (int*)malloc(sizeof(int));
@@ -38,17 +38,17 @@ void* fun2(void* arg){
     // // thread_kill(gettid(), 9);
     // printf("thread : %d returning\n", gettid());
     while(run){
-        acquire(&m);
+        thread_mutex_lock(&m);
         c++;
         c2++;
-        release(&m);
+        thread_mutex_unlock(&m);
     }
 }
 
 int main(){
     thread_t t1,t2;
     //init_spin_lock(&lock);
-    init_mutex(&m);
+    thread_mutex_init(&m);
     int arg = 10;
     void *ret;
     int* p = &arg;
