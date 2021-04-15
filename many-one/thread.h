@@ -3,7 +3,7 @@
 typedef struct tcb{
     /* returned by thread create */
     int tid;        
-    int pid;
+    char state[10];                // ready,running,completed
     void *(*start_routine)(void *);
     void* arg;
     void* ret_val;
