@@ -38,7 +38,9 @@ int main(){
     thread_create(&t1,&fun,(void*)p);
     thread_create(&t2,&fun2,NULL);
     printf("parent is waiting\n");
-    while(run);
+    while(run){
+       // printf("-");
+    }
     printf("parent waited successfully\n");
 
     return 0;

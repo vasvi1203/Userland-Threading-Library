@@ -38,9 +38,9 @@ void scheduler(int signum, siginfo_t* info, void *context){
     prev_thread->uc_flags = returned_from->uc_flags;
     prev_thread->uc_mcontext = returned_from->uc_mcontext;
     prev_thread->uc_sigmask = returned_from->uc_sigmask;
-
+    printf("ready:- CURRENT TID:-%d\n",current_thread->tid);
     enQ(ready_queue,current_thread);
-    
+    printQ(ready_queue);
     current_thread = deQ(ready_queue);
    
     setcontext(&current_thread->context);
@@ -119,6 +119,8 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     makecontext(&this->context,wrap_start_routine,1);
     *thread = t_index ++;
     enQ(ready_queue,this);
+    printf("ready:- ");
+    printQ(ready_queue);
     enable_timer();
 }
 

@@ -7,6 +7,7 @@ void initQ(queue* q){
 }
 
 void enQ(queue* q,tcb* t){
+    printf("EnQ entered:- %d\n",t->tid);
     node* tmp = (node*)malloc(sizeof(node));
     tmp->t = t;
     tmp->next = NULL;
