@@ -1,8 +1,8 @@
 bin_PROGRAMS = project
 project_SOURCES = main.c thread.c thread.h queue.c queue.h
 
-project: main.o thread.o
-	gcc main.o thread.o queue.o -o project
+project: main.o thread.o queue.o
+	gcc -g main.o thread.o queue.o -o project
 
 queue.o: queue.c
 	gcc -c queue.c 
