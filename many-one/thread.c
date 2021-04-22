@@ -11,6 +11,7 @@ queue* ready_queue;
 queue* finished_queue;
 tcb* current_thread;
 int t_index = 1;
+int no_of_threads = 0;
 
 void disable_timer(void){
     sigset_t sigvtalrm;
@@ -31,18 +32,20 @@ void scheduler(int signum, siginfo_t* info, void *context){
     // deQ thread from ready --> thread created by user
     // make it running --> run that thread
     // makecontext(running)
-    printf("TIMER INTR\n");
+    // printf("TIMER INTR\n");
     ucontext_t* prev_thread = &current_thread->context;
     ucontext_t* returned_from = (ucontext_t *)context; 
 
     prev_thread->uc_flags = returned_from->uc_flags;
     prev_thread->uc_mcontext = returned_from->uc_mcontext;
     prev_thread->uc_sigmask = returned_from->uc_sigmask;
-    printf("ready:- CURRENT TID:-%d\n",current_thread->tid);
+    // printf("ready:- CURRENT TID:-%d\n",current_thread->tid);
     enQ(ready_queue,current_thread);
-    printQ(ready_queue);
+    // printf("now ready queue is [from sched]: -\n");
+    // printQ(ready_queue);
     current_thread = deQ(ready_queue);
-   
+    // printf("now ready queue is [from sched]: -\n");
+    // printQ(ready_queue);   
     setcontext(&current_thread->context);
 }
 
@@ -55,7 +58,7 @@ void setup_timer(){
     struct sigaction ticker;
     ticker.sa_sigaction = scheduler;  // signal handler
     ticker.sa_mask = signal_set;      
-    ticker.sa_flags = 0;
+    ticker.sa_flags = 0;             // don't use SA_RESTARAT
 
     // SIGVTALRM suits more than SIGALRM
     // handle SIGVTALRM with ticker configurations
@@ -70,14 +73,16 @@ void setup_timer(){
     tick.it_value.tv_usec = 1;
 
     setitimer(ITIMER_VIRTUAL,&tick,NULL);
-    printf("TIMER INIT\n");
+    // printf("TIMER INIT\n");
 }
 
 void make_main_thread_context(){
     tcb* main_thread = (tcb *)malloc(sizeof(tcb));
     main_thread->tid = getpid();
+    main_thread->index = t_index ++;
+    main_thread->completed = 0;
+    no_of_threads++;
     getcontext(&main_thread->context);
-    // strcpy(main_thread->state,"RUNNING");
     current_thread = main_thread;
 }
 
@@ -87,7 +92,6 @@ void init_threads(){
     initQ(ready_queue);
     initQ(finished_queue);
     setup_timer();
-    // sleep(2);
     // kernal scheduler is still running the main thread
     // on timer we change the context to run another thread
     make_main_thread_context();
@@ -105,32 +109,45 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     disable_timer();
     // create context for current thread
     // put it ready q
+    if(no_of_threads >= 128){
+        printf("Thread can't be created\n");
+        return 1;
+    }
     tcb* this = (tcb *)malloc(sizeof(tcb));
     this->tid = getpid() + t_index;
-    // strcpy( this->state, "READY");
     this->start_routine = start_routine;
     this->arg = arg;
     this->ret_val = NULL;
+    this->index = t_index;
     getcontext( &this->context );
     void* stack = malloc(STACK);
     this->context.uc_stack.ss_flags = 0;
     this->context.uc_stack.ss_size = STACK;
     this->context.uc_stack.ss_sp = stack;
-    makecontext(&this->context,wrap_start_routine,1);
+    makecontext(&this->context,wrap_start_routine,0);
     *thread = t_index ++;
+    no_of_threads++;
     enQ(ready_queue,this);
-    printf("ready:- ");
-    printQ(ready_queue);
+
     enable_timer();
+    return 0;
 }
 
 void thread_exit(void *retval){
     disable_timer();
     current_thread->ret_val = retval;
-    // strcpy(current_thread->state,"COMPLETED");
+    current_thread->completed = 1;
     enQ(finished_queue,current_thread);
+    no_of_threads--;
+    
     current_thread = deQ(ready_queue);
+
     enable_timer();
     // run next thread from ready queue
     setcontext(&current_thread->context);
+}
+
+int thread_join(thread_t thread, void **retval){
+    // search for thread 
+    // extract return value from tcb
 }

@@ -14,16 +14,16 @@ int run1 = 1;
 
 void* fun(void* arg){
     printf("thread : received arg: %d\n", *(int *)arg);
-    while(run1);
+    // while(run1);
     printf("thread exit : returning\n");
-    run = 0;
+    // run = 0;
 }
 
 void* fun2(void* arg){
     // sleep(2);
     printf("thread : received nothing\n");
     printf("thread : returning\n");
-    run1 = 0;
+    run = 0;
 }
 
 int main(){
@@ -38,10 +38,7 @@ int main(){
     thread_create(&t1,&fun,(void*)p);
     thread_create(&t2,&fun2,NULL);
     printf("parent is waiting\n");
-    while(run){
-       // printf("-");
-    }
+    while(run);
     printf("parent waited successfully\n");
-
     return 0;
 }

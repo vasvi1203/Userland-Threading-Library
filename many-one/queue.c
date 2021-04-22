@@ -6,13 +6,12 @@ void initQ(queue* q){
     q->size = 0;
 }
 
-void enQ(queue* q,tcb* t){
-    printf("EnQ entered:- %d\n",t->tid);
+void enQ(queue* q,tcb* _t){
     node* tmp = (node*)malloc(sizeof(node));
-    tmp->t = t;
+    tmp->t = _t;
     tmp->next = NULL;
-
-    if(q->head == NULL){
+    // if(q->head == NULL){
+    if(q->size == 0){
         q->head = tmp;
         q->tail = tmp;
     }
@@ -20,7 +19,7 @@ void enQ(queue* q,tcb* t){
         q->tail->next = tmp;
         q->tail = tmp;
     }
-    printf("EnQ:- %d\n",t->tid);
+    // printf("EnQ:- %d\n",_t->tid);
     (q->size)++;
     // printQ(q);
 }
@@ -41,7 +40,7 @@ tcb* deQ(queue* q){
         q->tail = NULL;
     }
     (q->size) --;
-    printf("DeQ:- %d\n",tmp->tid);
+    // printf("DeQ:- %d\n",tmp->tid);
     free(tmp_head);
     return tmp;
 }

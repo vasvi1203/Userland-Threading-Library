@@ -13,6 +13,7 @@ typedef struct tcb{
     void *(*start_routine)(void *);
     void* arg;
     void* ret_val;
+    short completed;
 }tcb;
 
 typedef long thread_t;
