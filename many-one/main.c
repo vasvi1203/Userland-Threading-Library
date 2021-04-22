@@ -17,6 +17,10 @@ void* fun(void* arg){
     // while(run1);
     printf("thread exit : returning\n");
     // run = 0;
+    int *p = (int*)malloc(sizeof(int));
+    *p = 20;
+    // thread_exit(p);
+    return p;
 }
 
 void* fun2(void* arg){
@@ -38,7 +42,11 @@ int main(){
     thread_create(&t1,&fun,(void*)p);
     thread_create(&t2,&fun2,NULL);
     printf("parent is waiting\n");
-    while(run);
+    // while(run);
+    thread_join(t1,&ret);
+    thread_join(t2,NULL);
+    int *p1 = (int *)ret;
+    printf("Return value of thread in main : %d\n",*p1);
     printf("parent waited successfully\n");
     return 0;
 }

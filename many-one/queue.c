@@ -53,3 +53,43 @@ void printQ(queue* q){
         printf("\n");
     }
 }
+
+tcb* search_thread(queue* q, thread_t t){
+    if(q->head == NULL){
+        return NULL;
+    }
+    node* tmp = q->head;
+    // printf("Searching for: %ld\n",t);
+    while(tmp && tmp->t->index != t){
+        // printf("Got %d \n",tmp->t->index);
+        tmp = tmp->next;
+    }
+    // printf("Searched for: %ld\n",t);
+    return (tmp->t);
+}
+
+void remove_thread(queue* q, thread_t t){
+    node* tmp = q->head;
+    node* parent = q->head;
+    while(tmp){
+        if(tmp->t->index == t){
+            break;
+        }
+        parent = tmp;
+        tmp = tmp->next;
+    }
+    if(tmp == parent){
+        q->head = tmp->next;
+        free(tmp);
+        (q->size)--;
+    }
+    else if(tmp == NULL){
+        printf("Invalid argument to remove_thread!\n");
+        return;
+    }
+    else{
+        parent->next = tmp->next;
+        free(tmp);
+        (q->size)--;
+    }
+}

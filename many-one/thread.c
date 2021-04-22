@@ -150,4 +150,24 @@ void thread_exit(void *retval){
 int thread_join(thread_t thread, void **retval){
     // search for thread 
     // extract return value from tcb
+    // search in ready queue first then in completed queue
+    // printQ(ready_queue);
+    // printf("Search in ready queue\n");
+     tcb* required_tcb = search_thread(ready_queue,thread);
+     if(required_tcb != NULL){
+         while(!required_tcb->completed);
+     }
+    // printQ(finished_queue);
+    // printf("Search in finished queue\n");
+    required_tcb = search_thread(finished_queue,thread);
+    if(required_tcb == NULL){
+        printf("Invalid argument to thread_join\n");
+        printf("Thread doesn't exsist\n");
+        return 1;
+    }
+    if(retval){
+        *retval = required_tcb->ret_val;
+    }
+    remove_thread(finished_queue,thread);
+    return 0;
 }

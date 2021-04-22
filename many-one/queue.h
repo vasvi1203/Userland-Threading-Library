@@ -19,5 +19,6 @@ void initQ(queue*);
 void enQ(queue*,tcb*);
 tcb* deQ(queue*);
 void printQ(queue*);
-
+tcb* search_thread(queue*, thread_t);
+void remove_thread(queue*, thread_t);
 #endif /* QUEUE_H */
