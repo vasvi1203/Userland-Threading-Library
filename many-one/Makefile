@@ -5,13 +5,13 @@ project: main.o thread.o queue.o
 	gcc -g main.o thread.o queue.o -o project
 
 queue.o: queue.c
-	gcc -c queue.c 
+	gcc -g -c queue.c 
 
 main.o: main.c
-	gcc -c main.c
+	gcc -g -c main.c
 
 thread.o: thread.c thread.h
-	gcc -c thread.c
+	gcc -g -c thread.c
 
 clean:
 	rm *.o project

@@ -7,6 +7,7 @@ void initQ(queue* q){
 }
 
 void enQ(queue* q,tcb* _t){
+    // printf("EnQ:- %d\n",_t->tid);
     node* tmp = (node*)malloc(sizeof(node));
     tmp->t = _t;
     tmp->next = NULL;
@@ -55,6 +56,15 @@ void printQ(queue* q){
 }
 
 tcb* search_thread(queue* q, thread_t t){
+    if(q == NULL){
+        printf("Queue NOT initialized!\n");
+        return NULL;
+    }
+    if(q == NULL || q->head == NULL){
+        // printf("Queue is empty!\n");
+        return NULL;
+    }
+
     if(q->head == NULL){
         return NULL;
     }
@@ -64,8 +74,10 @@ tcb* search_thread(queue* q, thread_t t){
         // printf("Got %d \n",tmp->t->index);
         tmp = tmp->next;
     }
-    // printf("Searched for: %ld\n",t);
-    return (tmp->t);
+    // printf("Searched for: %ld found thread:- %d\n",t,tmp->t->tid);
+    tcb* res = tmp->t;
+    // free(tmp);
+    return res;
 }
 
 void remove_thread(queue* q, thread_t t){

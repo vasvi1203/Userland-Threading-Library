@@ -14,6 +14,7 @@ typedef struct tcb{
     void* arg;
     void* ret_val;
     short completed;
+    sigset_t signals;
 }tcb;
 
 typedef long thread_t;
