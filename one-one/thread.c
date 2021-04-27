@@ -10,6 +10,7 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <sys/types.h>
+#include <errno.h>
 #include<limits.h>
 #include "thread.h"
 #define STACK 4096
@@ -45,7 +46,11 @@ void thread_init(){
 int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
   if(t_index >= MAX_THREADS){
     perror("Can't create more threads!\n");
-    exit(1);
+    return EAGAIN;
+  }
+  if(start_routine == NULL){
+    perror("Invalid start routine!\n");
+    return EINVAL;
   }
   void *stack = malloc(STACK);    // Stack for new process
   if(!stack) {
@@ -77,17 +82,18 @@ int thread_join(thread_t thread, void **retval){
 
   if(index == -1 || index == t_index){
     perror("Invalid argument to thread join\n");
-    exit(1);
+    return EINVAL;
   }    
-  // syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, -1, NULL, NULL, 0);
+  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, -1, NULL, NULL, 0);
   // printf("In join index: %d waiting for %d\n",index,tcb_table[index].tid);
-  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT_PRIVATE | FUTEX_PRIVATE_FLAG, tcb_table[index].tid, NULL, NULL, 0);
+  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, tcb_table[index].tid, NULL, NULL, 0);
   // printf("Waited successfully for index: %d for %d\n",index,tcb_table[index].tid);
  
   if(retval && tcb_table[index].ret_val) {
     *retval = tcb_table[index].ret_val;
   }
-  
+
+  // clean up tcb for joined thread
   for(i = index; i < t_index - 1; i++){
     tcb_table[i].child_tid = tcb_table[i + 1].child_tid;
     tcb_table[i].tid = tcb_table[i + 1].tid;
@@ -96,7 +102,7 @@ int thread_join(thread_t thread, void **retval){
   t_index--;
 }
 
-void thread_exit(void *retval) {
+int thread_exit(void *retval) {
   int i, thread, index = -1;
   thread = gettid();
   for(i = 0; i < t_index; i++) {
@@ -109,12 +115,12 @@ void thread_exit(void *retval) {
 
   if(index == -1 || index == t_index){
     perror("Invalid argument to thread exit\n");
-    exit(0);
+    return EINVAL;
   }
 
   // printf("%d\n", *(int *)(tcb_table[i].ret_val));
-  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAKE_PRIVATE | FUTEX_PRIVATE_FLAG, INT_MAX, NULL, NULL, 0);
-  syscall(SYS_exit, 0);
+  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
+  return syscall(SYS_exit, 0);
 }
 
 int thread_kill(thread_t thread, int sig) {
@@ -129,7 +135,7 @@ int thread_kill(thread_t thread, int sig) {
 
   if(index == -1 || index == t_index){
     perror("Invalid argument to thread kill\n");
-    exit(0);
+    return EINVAL;
   }
 
   tgkill(tgid, thread, sig);

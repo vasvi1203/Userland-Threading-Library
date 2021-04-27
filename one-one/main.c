@@ -19,31 +19,31 @@ void signal_handler(int sig){
 void* fun(void* arg){
     // shared resource caused race condition
     // sleep(5);
-    // printf("thread : %d received arg: %d\n", gettid(), *(int *)arg);
-    // printf("thread exit : %d returning\n", gettid());
+    printf("thread : %d received arg: %d\n", gettid(), *(int *)arg);
+    printf("thread exit : %d returning\n", gettid());
     int *p = (int*)malloc(sizeof(int));
     *p = 20;
-    while(run){
-        thread_mutex_lock(&m);
-        c++;
-        c1++;
-        thread_mutex_unlock(&m);
-    }
+    // while(run){
+    //     thread_mutex_lock(&m);
+    //     c++;
+    //     c1++;
+    //     thread_mutex_unlock(&m);
+    // }
     thread_exit(p);
 }
 
 void* fun2(void* arg){
     // sleep(2);
     signal(SIGHUP,signal_handler);
-    // printf("thread : %d received nothing\n", gettid());
+    printf("thread : %d received nothing\n", gettid());
     // sleep(4);
-    // printf("thread : %d returning\n", gettid());
-    while(run){
-        thread_mutex_lock(&m);
-        c++;
-        c2++;
-        thread_mutex_unlock(&m);
-    }
+    printf("thread : %d returning\n", gettid());
+    // while(run){
+    //     thread_mutex_lock(&m);
+    //     c++;
+    //     c2++;
+    //     thread_mutex_unlock(&m);
+    // }
     thread_exit(NULL);
 }
 
@@ -67,10 +67,10 @@ int main(){
     printf("In main: %d\n",*p1);
     
     printf("parent waited successfully\n");
-    printf("\nChecking lock effect:-\n");
-    printf("c1 = %d\n",c1);
-    printf("c2 = %d\n",c2);
-    printf("c1 + c2 = %d\n",c1 + c2);
-    printf("c = %d\n",c);
+    // printf("\nChecking lock effect:-\n");
+    // printf("c1 = %d\n",c1);
+    // printf("c2 = %d\n",c2);
+    // printf("c1 + c2 = %d\n",c1 + c2);
+    // printf("c = %d\n",c);
     return 0;
 }
