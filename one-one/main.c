@@ -12,30 +12,31 @@ spinlock lock;
 mutex m;
 int c = 0,c1 = 0,c2 = 0,run = 1;
 
+void signal_handler(int sig){
+    printf("CAUGHT SIGNAL:- %d\n",sig);
+}
+
 void* fun(void* arg){
     // shared resource caused race condition
     // sleep(5);
     // printf("thread : %d received arg: %d\n", gettid(), *(int *)arg);
     // printf("thread exit : %d returning\n", gettid());
-    // int *p = (int*)malloc(sizeof(int));
-    // *p = 20;
+    int *p = (int*)malloc(sizeof(int));
+    *p = 20;
     while(run){
         thread_mutex_lock(&m);
         c++;
         c1++;
         thread_mutex_unlock(&m);
     }
-    
-    int *p = (int*)malloc(sizeof(int));
-    *p = 20;
     thread_exit(p);
 }
 
 void* fun2(void* arg){
     // sleep(2);
+    signal(SIGHUP,signal_handler);
     // printf("thread : %d received nothing\n", gettid());
     // sleep(4);
-    // // thread_kill(gettid(), 9);
     // printf("thread : %d returning\n", gettid());
     while(run){
         thread_mutex_lock(&m);
@@ -43,6 +44,7 @@ void* fun2(void* arg){
         c2++;
         thread_mutex_unlock(&m);
     }
+    thread_exit(NULL);
 }
 
 int main(){
@@ -57,6 +59,7 @@ int main(){
     thread_create(&t2,&fun2,NULL);
     printf("parent is waiting\n");
     sleep(1);
+    //thread_kill(t2,SIGHUP);
     run = 0;
     thread_join(t1, &ret);
     thread_join(t2, NULL);

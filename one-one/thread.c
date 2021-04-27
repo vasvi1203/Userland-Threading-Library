@@ -10,6 +10,7 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <sys/types.h>
+#include<limits.h>
 #include "thread.h"
 #define STACK 4096
 #define SLEEP_SEC 10
@@ -61,7 +62,6 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
   }
   tcb_table[t_index].tid = *thread;
   t_index++;
-  // print_thread(t_index -1);
   return 0;
 }
 
@@ -79,12 +79,9 @@ int thread_join(thread_t thread, void **retval){
     perror("Invalid argument to thread join\n");
     exit(1);
   }    
-
-  // print_thread(index);
+  // syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, -1, NULL, NULL, 0);
   // printf("In join index: %d waiting for %d\n",index,tcb_table[index].tid);
-  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, -1, NULL, NULL, 0);
-  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, tcb_table[index].tid, NULL, NULL, 0);
-
+  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT_PRIVATE | FUTEX_PRIVATE_FLAG, tcb_table[index].tid, NULL, NULL, 0);
   // printf("Waited successfully for index: %d for %d\n",index,tcb_table[index].tid);
  
   if(retval && tcb_table[index].ret_val) {
@@ -97,7 +94,6 @@ int thread_join(thread_t thread, void **retval){
     tcb_table[i].ret_val = tcb_table[i + 1].ret_val;
   } 
   t_index--;
-  printf("No. of active threads : %d\n", t_index);
 }
 
 void thread_exit(void *retval) {
@@ -112,11 +108,12 @@ void thread_exit(void *retval) {
   }
 
   if(index == -1 || index == t_index){
-    perror("Invalid argument to thread kill\n");
+    perror("Invalid argument to thread exit\n");
     exit(0);
   }
 
   // printf("%d\n", *(int *)(tcb_table[i].ret_val));
+  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAKE_PRIVATE | FUTEX_PRIVATE_FLAG, INT_MAX, NULL, NULL, 0);
   syscall(SYS_exit, 0);
 }
 
@@ -145,9 +142,8 @@ void thread_spin_init(spinlock* spin_lock){
 void thread_mutex_init(mutex* m){
   int i;
   m->islocked = 0;
+  m->futex_word= 0;
   thread_spin_init(&m->spin_lock);
-  // for(i = 0; i < MAX_THREADS; i++) 
-  //   m->q[i] = 0;      // RUNNABLE
 }
 
 // @credit:- xv6 code
@@ -181,25 +177,7 @@ void thread_spin_unlock(spinlock* spin_lock){
 
 void thread_mutex_block(mutex *m, spinlock *sl) {
   thread_spin_unlock(sl);
-  int thread = gettid();
-  int i, index, sched;
-  // for(i = 0; i < t_index; i++) {
-  //   if(tcb_table[i].tid == thread) {
-  //     index = i;
-  //     break;
-  //   }
-  // }
-
-  // if(index == -1 || index == t_index){
-  //   perror("Invalid argument to mutex block\n");
-  //   exit(0);
-  // }
-
-  // m->q[mutex_index] = tcb_table[index].tid;
-  // mutex_index++;
-  //syscall(SYS_futex, &(tcb_table[index].state), FUTEX_WAIT, 1, NULL, NULL, 0);
-  sched = sched_yield();
-  //printf("sched : %d\n", sched);
+  syscall(SYS_futex, &(m->islocked), FUTEX_WAIT, 1, NULL, NULL, 0);
   thread_spin_lock(sl);
 }
 
@@ -215,24 +193,7 @@ void thread_mutex_unlock(mutex *m) {
   int i, index;
   thread_spin_lock(&m->spin_lock);
   m->islocked = 0;
-  // if(mutex_index) {
-  //   //printf("%d\n",mutex_index);
-  //   mutex_index--;
-  //   for(i = 0; i < t_index; i++) {
-  //     if(tcb_table[i].tid == m->q[mutex_index]) {
-  //       index = i;
-  //       break;
-  //     }
-  //   }
-
-  //   if(index == -1 || index == t_index){
-  //     perror("Invalid argument to thread kill\n");
-  //     exit(0);
-  //   }
-    
-  //   m->q[mutex_index] = 0;
-  // }
-  
+  syscall(SYS_futex, &(m->islocked), FUTEX_WAKE, 1, NULL, NULL, 0);  
   thread_spin_unlock(&m->spin_lock);
 }
 

@@ -12,14 +12,11 @@ typedef struct spinlock{
     int islocked;
 } spinlock;
 
-//typedef int thread_spinlock_t;
-
-extern int mutex_index;
 
 typedef struct mutex {
     int islocked;
     spinlock spin_lock;
-    //int q[MAX_THREADS];         
+    int futex_word;    
 } mutex;
 
 tcb tcb_table[MAX_THREADS];
