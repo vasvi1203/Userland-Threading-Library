@@ -1,5 +1,6 @@
 *.o
 *.so
 a.out
-tryq
 project
+tryq
+.vscode/settings.json

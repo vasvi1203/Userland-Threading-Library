@@ -60,7 +60,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
   thread_init(); 
   int (*start)(void *) = (void *)(*start_routine);      // convert (void *)(*start_routine) to int (*start)
   *thread = clone(start, stack + STACK,CLONE_VM | CLONE_FS | CLONE_FILES |
-                   CLONE_THREAD | CLONE_SIGHAND | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID ,arg,NULL,NULL,&(tcb_table[t_index].child_tid ));
+                   CLONE_THREAD | CLONE_SIGHAND | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID | CLONE_PARENT_SETTID ,arg,NULL,NULL,&(tcb_table[t_index].child_tid ));
   if(*thread < 0) {
     perror("Thread error\n");
     return -1;
@@ -87,19 +87,19 @@ int thread_join(thread_t thread, void **retval){
   syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, -1, NULL, NULL, 0);
   // printf("In join index: %d waiting for %d\n",index,tcb_table[index].tid);
   syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAIT, tcb_table[index].tid, NULL, NULL, 0);
+  
   // printf("Waited successfully for index: %d for %d\n",index,tcb_table[index].tid);
  
   if(retval && tcb_table[index].ret_val) {
     *retval = tcb_table[index].ret_val;
   }
 
-  // clean up tcb for joined thread
-  for(i = index; i < t_index - 1; i++){
-    tcb_table[i].child_tid = tcb_table[i + 1].child_tid;
-    tcb_table[i].tid = tcb_table[i + 1].tid;
-    tcb_table[i].ret_val = tcb_table[i + 1].ret_val;
-  } 
-  t_index--;
+  // for(i = index; i < t_index - 1; i++){
+  //   tcb_table[i].child_tid = tcb_table[i + 1].child_tid;
+  //   tcb_table[i].tid = tcb_table[i + 1].tid;
+  //   tcb_table[i].ret_val = tcb_table[i + 1].ret_val;
+  // } 
+  // t_index--;
 }
 
 int thread_exit(void *retval) {
@@ -119,8 +119,8 @@ int thread_exit(void *retval) {
   }
 
   // printf("%d\n", *(int *)(tcb_table[i].ret_val));
-  syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
-  return syscall(SYS_exit, 0);
+  // syscall(SYS_futex, &(tcb_table[index].child_tid), FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
+  return syscall(SYS_exit, NULL);
 }
 
 int thread_kill(thread_t thread, int sig) {
