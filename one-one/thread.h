@@ -1,4 +1,4 @@
-#define MAX_THREADS 128
+#define MAX_THREADS 101
 
 // Geeks For Geeks
 typedef struct tcb {

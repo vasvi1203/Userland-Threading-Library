@@ -1,20 +1,21 @@
-#include "thread.h"
-#include "queue.h"
 #include<signal.h>
 #include<string.h>
 #include<sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include<stdio.h>
+#include<errno.h>
+#include "thread.h"
+#include "queue.h"
+
+int t_index = 0;
+int no_of_threads = 0;
+ucontext_t signal_context;          /* the interrupt context */
+void *signal_stack;                 /* global interrupt stack */
 
 queue* ready_queue;
 queue* finished_queue;
 tcb* current_thread;
-int t_index = 0;
-int no_of_threads = 0;
-thread_t status[256];
-ucontext_t signal_context;          /* the interrupt context */
-void *signal_stack;                 /* global interrupt stack */
 
 void disable_timer(void){
     sigset_t sigvtalrm;
@@ -30,49 +31,23 @@ void enable_timer(){
     sigprocmask(SIG_UNBLOCK, &sigvtalrm, NULL);
 }
 
-void make_status(){
-    for(int i = 0; i < 256; i++){
-        status[i] = 0;
-    }
-}
 
-void scheduler(int signum, siginfo_t* info, void *context){
-    // curretnly running thread --> enQ
-    // deQ thread from ready --> thread created by user
-    // make it running --> run that thread
-    // makecontext(running)
-    // printf("TIMER INTR\n");
-    disable_timer();
-    ucontext_t* prev_thread = &current_thread->context;
-    ucontext_t* returned_from = (ucontext_t *)context; 
-
-    prev_thread->uc_flags = returned_from->uc_flags;
-    prev_thread->uc_mcontext = returned_from->uc_mcontext;
-    prev_thread->uc_sigmask = returned_from->uc_sigmask;
-    // printf("ready:- CURRENT TID:-%d\n",current_thread->tid);
-    enQ(ready_queue,current_thread);
-    // printf("now ready queue is [from sched]: -\n");
-    // printQ(ready_queue);
-    current_thread = deQ(ready_queue);
-    // printf("now ready queue is [from sched]: -\n");
-    // printQ(ready_queue);   
-    enable_timer();
-    setcontext(&current_thread->context);
-
-}
-
-void
-schedule()
+void schedule()
 {
     disable_timer();
-    enQ(ready_queue,current_thread);
+    
+    if(current_thread->completed != 2){
+        enQ(ready_queue,current_thread);
+    }
+    
     current_thread = deQ(ready_queue);
-    for(int i = 1; i < 29; i++) {
+    for(int i = 1; i < 32; i++) {
         if(sigismember(&current_thread->signals, i)) {
             raise(i);
             sigdelset(&current_thread->signals,i);
         }
     }
+    // printf("id:- %d\n",current_thread->index);
     enable_timer();
     setcontext(&current_thread->context);
 
@@ -84,8 +59,7 @@ schedule()
   contexts saving the previously executing thread and jumping to the
   scheduler.
 */
-void
-timer_interrupt(int i, siginfo_t *siginfo, void *old_context)
+void timer_interrupt_handler(int i, siginfo_t *siginfo, void *old_context)
 {
     /* Create new scheduler context */
     getcontext(&signal_context);
@@ -107,7 +81,7 @@ void setup_timer(){
 
     struct sigaction ticker;
     // ticker.sa_sigaction = scheduler;  // signal handler
-    ticker.sa_sigaction = timer_interrupt;  // signal handler
+    ticker.sa_sigaction = timer_interrupt_handler;  // signal handler
     ticker.sa_mask = signal_set;      
     ticker.sa_flags =  0;             // don't use SA_RESTARAT
 
@@ -118,7 +92,7 @@ void setup_timer(){
     struct itimerval tick;
     // //  /* when timer expires */
     tick.it_interval.tv_sec = 0;
-    tick.it_interval.tv_usec = 10000;
+    tick.it_interval.tv_usec = 1000;
     // // /* Time to the next timer expiration. */
     tick.it_value.tv_sec = 0;
     tick.it_value.tv_usec = 1;
@@ -166,6 +140,10 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
         printf("Thread can't be created\n");
         return 1;
     }
+    if(start_routine == NULL){
+        perror("Invalid start routine!\n");
+        return EINVAL;
+    }
     tcb* this = (struct tcb *)malloc(sizeof(struct tcb));
     this->tid = getpid() + t_index;
     this->start_routine = start_routine;
@@ -174,10 +152,11 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
     this->index = t_index;
     sigemptyset(&this->signals);
     getcontext( &this->context );
-    void* stack = malloc(STACK);
+    this->stack = malloc(STACK);
+    // void* stack = malloc(STACK);
     this->context.uc_stack.ss_flags = 0;
     this->context.uc_stack.ss_size = STACK;
-    this->context.uc_stack.ss_sp = stack;
+    this->context.uc_stack.ss_sp = this->stack;
     makecontext(&this->context,wrap_start_routine,0);
     *thread = t_index ++;
     no_of_threads++;
@@ -191,10 +170,9 @@ void thread_exit(void *retval){
     disable_timer();
     current_thread->ret_val = retval;
     current_thread->completed = 1;
-    status[current_thread->index] = 1;
+    free(current_thread->stack);
     enQ(finished_queue,current_thread);
     no_of_threads--;
-    
     current_thread = deQ(ready_queue);
 
     enable_timer();
@@ -206,7 +184,6 @@ int thread_join(thread_t thread, void **retval){
     // search for thread 
     // extract return value from tcb
     // search in ready queue first then in completed queue
-    // printf("Search in ready queue\n");
     disable_timer();
     tcb* required_tcb = search_thread(ready_queue,thread);
     enable_timer();
@@ -215,11 +192,7 @@ int thread_join(thread_t thread, void **retval){
          while(required_tcb->completed == 0);
     //  printf("Waited for the the thread; status:- %u\n",required_tcb->completed);
     }
-    // printQ(finished_queue);
-    // printf("status of %ld :- %ld\n",thread,status[thread]);
-    // while(status[thread] == 0);
-    // printf("status of %ld :- %ld\n",thread,status[thread]);
-    // printf("Search in finished queue\n");
+
     disable_timer();
     required_tcb = search_thread(finished_queue,thread);
     enable_timer();
@@ -227,11 +200,11 @@ int thread_join(thread_t thread, void **retval){
     // tcb* required_tcb = search_thread(finished_queue,thread);
     if(required_tcb == NULL){
         printf("Invalid argument to thread_join\n");
-        printf("Thread doesn't exsist\n");
-        return 1;
+        perror("Thread doesn't exsist\n");
+        return EINVAL;
     }
     if(retval){
-        printf("Stored return value\n");
+        // printf("Stored return value\n");
         *retval = required_tcb->ret_val;
     }
     remove_thread(finished_queue,thread);

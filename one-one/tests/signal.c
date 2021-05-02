@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -10,27 +11,23 @@
 #include "../thread.h"
 
 void signal_handler(int sig){
-    printf("Caught SIGHUP\n");
+    // printf("Caught SIGHUP\n");
+    FILE* fp = fopen("data/signal.txt","w");
+    fprintf(fp,"signal\n");
+    fclose(fp);
 }
-
 void* fun1(void* arg){
     signal(SIGHUP,signal_handler);
-    printf("[thread %d]: arg -----> NULL\n", gettid());
-    sleep(1);
-    printf("[thread %d]: exiting      \n", gettid());
+    // printf("[thread %d]: installed singal handler\n",gettid());
+    sleep(2);
     thread_exit(NULL);
 }
-
-
 int main(){
-    thread_t t1,t2,t3,t4,t5;
-    printf("main thread id : %d\n",getpid());
+    thread_t t1;
     thread_create(&t1,&fun1,NULL);
-    printf("parent is waiting\n");
     sleep(1);
+    // printf("Sending singal\n");
     thread_kill(t1,SIGHUP);
     thread_join(t1, NULL);
-    printf("parent waited successfully\n");
     return 0;
 }
-

@@ -13,6 +13,7 @@ typedef struct tcb{
     void *(*start_routine)(void *);
     void* arg;
     void* ret_val;
+    void* stack;
     short completed;
     sigset_t signals;
 }tcb;

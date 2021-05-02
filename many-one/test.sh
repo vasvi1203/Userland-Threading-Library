@@ -42,27 +42,22 @@ echo -e "\n\t spinlocks test \n"
 
 ./spin
 
-echo -e "\n************************************************ \n"
 
-echo -e "\n\t mutex test \n"
+# echo -e "\n************************************************ \n"
 
-./mutex
+# echo -e "\n\t signal test \n"
 
-echo -e "\n************************************************ \n"
+# ./signal
 
-echo -e "\n\t signal test \n"
+# echo -e "\n\t Test:- Signal handler should create a file in data folder \n"
 
-./signal
-
-echo -e "\n\t Test:- Signal handler should create a file in data folder \n"
-
-if [ -e data/signal.txt ]
-then
-    echo -e "\t Found signal.txt\n\t Passed"
+# if [ -e data/signal.txt ]
+# then
+#     echo -e "\t Found signal.txt\n\t Passed"
     
-else
-    echo -e "\t Couldn't find signal.txt\n\t Passed"
-fi
+# else
+#     echo -e "\t Couldn't find signal.txt\n\t Failed"
+# fi
 
 echo -e "\n************************************************ \n"
 
@@ -89,5 +84,5 @@ echo -e "\t Increments global variable in each thread\n"
 
 echo -e "\n************************************************ \n"
 
-# make clean
+make clean
 # rm data/signal.txt

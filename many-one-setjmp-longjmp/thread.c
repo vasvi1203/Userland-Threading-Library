@@ -73,7 +73,7 @@ void scheduler(int signum){
 		current_thread->status = RUNNING;
 		printf("sched %ld\n", current_thread->state->__jmpbuf[6]);
 		enable_timer();
-		for(i = 1; i < 29; i++) {
+		for(i = 1; i < 32; i++) {
 			if(sigismember(&current_thread->signals, i)) {
 				raise(i);
 				sigdelset(&current_thread->signals,i);
@@ -93,21 +93,21 @@ void thread_exit(void *retval){
     //disable_timer();
     current_thread->ret_val = retval;
 	current_thread->status = EXITED;
-	printf("before enQ%d\n", current_thread->tid);
+	// printf("before enQ%d\n", current_thread->tid);
     printQ(&thread_queue);
-	printf("%d siz\n", thread_queue.size);
-	printf("after enQ%d\n", current_thread->tid);
+	// printf("%d siz\n", thread_queue.size);
+	// printf("after enQ%d\n", current_thread->tid);
 	enable_timer(); 
 }
 
 void wrap_start_routine() {
-	printf("trvey\n");
+	// printf("trvey\n");
     void* result = current_thread->start_routine(current_thread->arg);
 	if(result != NULL) {
-		printf("%d\n", result);
+		// printf("%d\n", result);
 		thread_exit(result);
 	}
-	printf("exit %ld\n", current_thread->state->__jmpbuf[6]);
+	// printf("exit %ld\n", current_thread->state->__jmpbuf[6]);
 	scheduler(1);
 }
 

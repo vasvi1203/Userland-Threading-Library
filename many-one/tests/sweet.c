@@ -19,6 +19,7 @@ void* fun(void *arg){
 }
 
 int main(){
+    init_threads();
     thread_t t[5];
     void * ret;
     // printf("main thread id : %d\n",getpid());

@@ -89,5 +89,5 @@ echo -e "\t Increments global variable in each thread\n"
 
 echo -e "\n************************************************ \n"
 
-# make clean
+make clean
 # rm data/signal.txt

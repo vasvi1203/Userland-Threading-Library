@@ -46,6 +46,7 @@ void* matmul(){
 }
 int main(){
     // three threads
+    init_threads();
     thread_t t[3];
     int i,j,k;
 

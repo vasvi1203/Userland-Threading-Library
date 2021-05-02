@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "../thread.h"
+#include "../lock.h"
 #define NO 101
 
 spinlock lock;
@@ -25,6 +26,7 @@ void* fun1(void* arg){
 
 
 int main(){
+    init_threads();
     thread_t t[101];
     thread_spin_init(&lock);
     // printf("main thread id : %d\n",getpid());

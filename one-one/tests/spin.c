@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -62,25 +63,31 @@ void* fun4(void* arg){
 int main(){
     thread_t t1,t2,t3,t4;
     thread_spin_init(&lock);
-    printf("main thread id : %d\n",getpid());
+    // printf("main thread id : %d\n",getpid());
     thread_create(&t1,&fun1,NULL);
     thread_create(&t2,&fun2,NULL);
     thread_create(&t3,&fun3,NULL);
     thread_create(&t4,&fun4,NULL);
-    printf("parent is waiting\n");
+    // printf("parent is waiting\n");
     sleep(1);
     run = 0;
     thread_join(t1, NULL);
     thread_join(t2, NULL);
     thread_join(t3, NULL);
     thread_join(t4, NULL);
-    printf("parent waited successfully\n");
-    printf("\nChecking lock effect:-\n");
-    printf("c1 = %d\n",c1);
-    printf("c2 = %d\n",c2);
-    printf("c3 = %d\n",c3);
-    printf("c4 = %d\n",c4);
-    printf("c1 + c2 + c3 + c4 = %d\n",c1 + c2 + c3 + c4);
-    printf("c = %d\n",c);
+    // printf("parent waited successfully\n");
+    printf("\n\t Checking lock effect:-\n");
+    printf("\t c1 = %d\n",c1);
+    printf("\t c2 = %d\n",c2);
+    printf("\t c3 = %d\n",c3);
+    printf("\t c4 = %d\n",c4);
+    printf("\t c1 + c2 + c3 + c4 = %d\n",c1 + c2 + c3 + c4);
+    printf("\t c = %d\n",c);
+    if(c == (c1 + c2 + c3 + c4)){
+        printf("\n\t Passed\n");
+    }
+    else{
+        printf("\n\t Failed\n");
+    }
     return 0;
 }

@@ -8,8 +8,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "../thread.h"
+#include "../lock.h"
 
-mutex lock; 
+spinlock lock;
+
 
 int c = 0;
 int c1 = 0;
@@ -17,65 +19,71 @@ int c2 = 0;
 int c3 = 0;
 int c4 = 0;
 int run = 1;
+int why = 1;
 
 void* fun1(void* arg){
      while(run){
-        thread_mutex_lock(&lock);
+        thread_spin_lock(&lock);
         c++;
         c1++;
-        thread_mutex_unlock(&lock);
+        thread_spin_unlock(&lock);
     }
     thread_exit(NULL);
 }
 
 void* fun2(void* arg){
     while(run){
-        thread_mutex_lock(&lock);
+        thread_spin_lock(&lock);
         c++;
         c2++;
-        thread_mutex_unlock(&lock);
+        thread_spin_unlock(&lock);
     }
     thread_exit(NULL);
 }
 
 void* fun3(void* arg){
     while(run){
-        thread_mutex_lock(&lock);
+        thread_spin_lock(&lock);
         c++;
         c3++;
-        thread_mutex_unlock(&lock);
+        thread_spin_unlock(&lock);
     }
     thread_exit(NULL);
 }
 
 void* fun4(void* arg){
     while(run){
-        thread_mutex_lock(&lock);
+        thread_spin_lock(&lock);
         c++;
         c4++;
-        thread_mutex_unlock(&lock);
+        thread_spin_unlock(&lock);
     }
     thread_exit(NULL);
 }
 
+void* fun(){
+    why = 0;
+}
 
 int main(){
-    thread_t t1,t2,t3,t4;
-    thread_mutex_init(&lock);
+    init_threads();
+    thread_t t1,t2,t3,t4,t5;
+    thread_spin_init(&lock);
     // printf("main thread id : %d\n",getpid());
     thread_create(&t1,&fun1,NULL);
     thread_create(&t2,&fun2,NULL);
     thread_create(&t3,&fun3,NULL);
     thread_create(&t4,&fun4,NULL);
-    // printf("parent is waiting\n");
-    sleep(1);
+    thread_create(&t5,&fun,NULL);
+    while(why);
     run = 0;
     thread_join(t1, NULL);
     thread_join(t2, NULL);
     thread_join(t3, NULL);
     thread_join(t4, NULL);
+    thread_join(t5,NULL);
     // printf("parent waited successfully\n");
-     printf("\n\t Checking lock effect:-\n");
+    printf("\n\t Checking lock effect:-\n");
     printf("\t c1 = %d\n",c1);
     printf("\t c2 = %d\n",c2);
     printf("\t c3 = %d\n",c3);

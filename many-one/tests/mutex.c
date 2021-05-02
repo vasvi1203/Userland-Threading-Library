@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "../thread.h"
+#include "../lock.h"
 
 mutex lock; 
 
@@ -60,6 +61,7 @@ void* fun4(void* arg){
 
 
 int main(){
+    init_threads();
     thread_t t1,t2,t3,t4;
     thread_mutex_init(&lock);
     // printf("main thread id : %d\n",getpid());
