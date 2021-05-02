@@ -49,11 +49,11 @@ int main() {
 	thread_join(t2, NULL);
 	
 	// printf("parent waited successfully\n");
-	printf("\nChecking lock effect:-\n");
-	printf("c1 = %d\n",c1);
-	printf("c2 = %d\n",c2);
-	printf("c1 + c2 = %d\n",c1 + c2);
-	printf("c = %d\n",c);
+	printf("\n\t Checking lock effect:-\n");
+	printf("\t c1 = %d\n", c1);
+	printf("\t c2 = %d\n", c2);
+	printf("\t c1 + c2 = %d\n", c1 + c2);
+	printf("\t c = %d\n\n", c);
 
     if(c == (c1 + c2) ){
         printf("\n\t Passed\n");

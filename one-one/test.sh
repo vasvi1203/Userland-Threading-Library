@@ -31,7 +31,7 @@ echo -e "\n\t Testing create join and exit with parameters \n"
 
 echo -e "\t Threads are passed with arguments"
 
-echo -e "\n\t and they return what they received\n"
+echo -e "\n\t and they return factorial of what they received\n"
 
 
 ./sweet
@@ -89,5 +89,5 @@ echo -e "\t Increments global variable in each thread\n"
 
 echo -e "\n************************************************ \n"
 
-# make clean
+make clean
 # rm data/signal.txt

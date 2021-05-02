@@ -31,16 +31,16 @@ echo -e "\n\t Testing create join and exit with parameters \n"
 
 echo -e "\t Threads are passed with arguments"
 
-echo -e "\n\t and they return what they received\n"
+echo -e "\n\t and they return factorial of what they received\n"
 
 
 ./sweet
 
-# echo -e "\n************************************************ \n"
+echo -e "\n************************************************ \n"
 
-# echo -e "\n\t spinlocks test \n"
+echo -e "\n\t spinlocks test \n"
 
-# ./spin
+./spin
 
 echo -e "\n************************************************ \n"
 
@@ -61,16 +61,16 @@ then
     echo -e "\t Found signal.txt\n\t Passed"
     
 else
-    echo -e "\t Couldn't find signal.txt\n\t Passed"
+    echo -e "\t Couldn't find signal.txt\n\t Failed"
 fi
 
 echo -e "\n************************************************ \n"
 
 echo -e "\n\t matrix test \n"
 
-./matrix < data/input.txt > data/myop.txt
+./matrix < data/input2.txt > data/myop.txt
 
-if cmp -s data/myop.txt data/output.txt 
+if cmp -s data/myop.txt data/output2.txt 
 then
     echo -e "\t outputs matched\n\t Passed"
     rm data/myop.txt
@@ -86,6 +86,23 @@ echo -e "\n\t Creates 101 threads"
 echo -e "\t Increments global variable in each thread\n"
 
 ./stress 
+
+echo -e "\n************************************************ \n"
+
+
+echo -e "\n\t stress matrix test \n"
+
+echo -e "\n\t Creates 100 threads multiply 100*100 matrix\n"
+
+./stress2 < data/input2.txt > data/myop.txt
+
+if cmp -s data/myop.txt data/output2.txt 
+then
+    echo -e "\t outputs matched\n\t Passed"
+    rm data/myop.txt
+else
+    echo -e "\t outputs didn't match!\n\t Failed"
+fi
 
 echo -e "\n************************************************ \n"
 
