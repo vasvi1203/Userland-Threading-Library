@@ -6,7 +6,7 @@ make
 
 echo -e "\n************************************************ \n"
 
-echo -e "\n\t Running one-one tests \n"
+echo -e "\n\t Running many-one tests \n"
 
 echo -e "\n\t create test \n"
 

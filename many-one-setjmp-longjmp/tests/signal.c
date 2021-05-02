@@ -10,24 +10,39 @@
 #include<signal.h>
 #include "../thread.h"
 
+int why = 1;
+int run = 1;
+int run1 = 1;
+
 void signal_handler(int sig){
-    // printf("Caught SIGHUP\n");
+    printf("Caught SIGCONT\n");
     FILE* fp = fopen("data/signal.txt","w");
-    fprintf(fp,"signal\n");
+    fprintf(fp,"signal SIGCONT\n");
     fclose(fp);
 }
 void* fun1(void* arg){
-    signal(SIGHUP,signal_handler);
-    // printf("[thread %d]: installed singal handler\n",gettid());
-    sleep(2);
+    signal(SIGCONT,signal_handler);
+    // printf("[thread ]: installed singal handler\n");
+    while(run);
+    run1 = 0;
     thread_exit(NULL);
 }
+
+void* fun(void* arg){
+    why = 0;
+    run = 0;
+    while(run1);
+    thread_exit(NULL);
+}
+
 int main(){
-    thread_t t1;
+    thread_t t1,t2;
     thread_create(&t1,&fun1,NULL);
-    sleep(1);
+    thread_create(&t2,&fun,NULL);
     // printf("Sending singal\n");
-    thread_kill(t1,SIGHUP);
+    while(why);
+    thread_kill(t1,SIGCONT);
     thread_join(t1, NULL);
+    thread_join(t2,NULL);
     return 0;
 }

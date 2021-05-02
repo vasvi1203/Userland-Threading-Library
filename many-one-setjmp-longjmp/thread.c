@@ -95,7 +95,7 @@ void thread_exit(void *retval){
     current_thread->ret_val = retval;
 	current_thread->status = EXITED;
 	// printf("before enQ%d\n", current_thread->tid);
-    printQ(&thread_queue);
+    // printQ(&thread_queue);
 	// printf("%d siz\n", thread_queue.size);
 	// printf("after enQ%d\n", current_thread->tid);
 	enable_timer(); 
@@ -250,7 +250,7 @@ int thread_kill(thread_t thread, int sig) {
         printf("Thread doesn't exsist\n");
         return 1;
     }
-	printf("tid %d\n", required_tcb->tid);
+	// printf("tid %d\n", required_tcb->tid);
     sigaddset(&required_tcb->signals, sig);
     enable_timer();
 }
@@ -264,7 +264,7 @@ int thread_join(thread_t thread, void **retval){
 	if(required_tcb == NULL){
         printf("Invalid argument to thread_join\n");
         printf("Thread doesn't exist\n");
-        return 1;
+        return EINVAL;
     }
     if(required_tcb != NULL){
         while(required_tcb->status != EXITED);

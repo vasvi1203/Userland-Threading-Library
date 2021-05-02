@@ -6,7 +6,7 @@ make
 
 echo -e "\n************************************************ \n"
 
-echo -e "\n\t Running one-one tests \n"
+echo -e "\n\t Running many-one tests \n"
 
 echo -e "\n\t create test \n"
 
@@ -36,11 +36,11 @@ echo -e "\n\t and they return what they received\n"
 
 ./sweet
 
-echo -e "\n************************************************ \n"
+# echo -e "\n************************************************ \n"
 
-echo -e "\n\t spinlocks test \n"
+# echo -e "\n\t spinlocks test \n"
 
-./spin
+# ./spin
 
 echo -e "\n************************************************ \n"
 
