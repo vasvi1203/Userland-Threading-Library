@@ -8,7 +8,7 @@ void initQ(queue* q){
 }
 
 void enQ(queue* q, tcb* t) {
-    printf("%d in enQ\n", t->tid);
+    // printf("%d in enQ\n", t->tid);
     node* tmp = (node*)malloc(sizeof(node));
     tmp->t = t;
     tmp->next = NULL;
@@ -46,10 +46,10 @@ tcb* deQ(queue* q) {
 void printQ(queue* q){
     node* tmp = q->head;
     while(tmp) {
-        printf("%d\n",tmp->t->tid);
+        // printf("%d\n",tmp->t->tid);
         tmp = tmp->next;
     }
-    printf("end\n");
+    // printf("end\n");
 }
 
 tcb* search_thread(queue* q, thread_t thread) {

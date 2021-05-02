@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <setjmp.h>
+#include <errno.h>
 #include <sys/mman.h>
 #include "thread.h"
 // #include "queue.h"
@@ -47,7 +48,7 @@ void deq_ready_thread() {
 		head = head->next;
 	}
 	
-	printf("find %ld\n", current_thread->state->__jmpbuf[6]);
+	// printf("find %ld\n", current_thread->state->__jmpbuf[6]);
 }
 
 void scheduler(int signum){
@@ -57,7 +58,7 @@ void scheduler(int signum){
 	// makecontext(running)
 	disable_timer();
 	int i;
-	printf("TIMER INTR\n");
+	// printf("TIMER INTR\n");
 	
 	if(setjmp(current_thread->state) == 0) {
 	
@@ -71,7 +72,7 @@ void scheduler(int signum){
 			exit(0);
 
 		current_thread->status = RUNNING;
-		printf("sched %ld\n", current_thread->state->__jmpbuf[6]);
+		// printf("sched %ld\n", current_thread->state->__jmpbuf[6]);
 		enable_timer();
 		for(i = 1; i < 32; i++) {
 			if(sigismember(&current_thread->signals, i)) {
@@ -89,7 +90,7 @@ void scheduler(int signum){
 
 void thread_exit(void *retval){
 	disable_timer();
-	printf("ret%d\n", retval);
+	// printf("ret%d\n", retval);
     //disable_timer();
     current_thread->ret_val = retval;
 	current_thread->status = EXITED;
@@ -135,7 +136,7 @@ void setup_timer() {
     tick.it_value.tv_usec = 10000;
 
     setitimer(ITIMER_VIRTUAL,&tick,NULL);
-    printf("TIMER INIT\n");
+    // printf("TIMER INIT\n");
 }
 
 static long int ptr_mangle(long int var) {
@@ -152,7 +153,7 @@ static long int ptr_mangle(long int var) {
 }
 
 void make_main_thread_context(void){
-	printf("Main\n");
+	// printf("Main\n");
   	tcb* main_thread = (tcb*)malloc(sizeof(tcb));
 	if(main_thread == NULL) {
 		perror("Malloc Failed");
@@ -200,6 +201,10 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
 		}
 	}
 
+	if(start_routine == NULL){
+		perror("Invalid start routine!\n");
+		return EINVAL;
+	}
 	//void *stack = malloc(STACK);    // Stack for new thread
 	void *stack = mmap(NULL, STACK, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	
@@ -217,18 +222,18 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
 	thread_queue.tail->t->arg = arg;
 
 	if(setjmp(thread_queue.tail->t->state) == 1) {
-		printf("entered\n");
+		// printf("entered\n");
 		return 0;
 	}
-	printf("set %ld\n", thread_queue.tail->t->state->__jmpbuf[6]);
+	// printf("set %ld\n", thread_queue.tail->t->state->__jmpbuf[6]);
 	
 	long int start = (long int)(wrap_start_routine); 
 	thread_queue.tail->t->state->__jmpbuf[7] = ptr_mangle(start);
-	printf("start %ld\n", thread_queue.tail->t->state->__jmpbuf[7]);
+	// printf("start %ld\n", thread_queue.tail->t->state->__jmpbuf[7]);
 
 	long int stack1 = (long int)(stack + STACK); 
 	thread_queue.tail->t->state->__jmpbuf[6] = ptr_mangle(stack1);
-	printf("stack %ld\n", thread_queue.tail->t->state->__jmpbuf[6]);
+	// printf("stack %ld\n", thread_queue.tail->t->state->__jmpbuf[6]);
 	
 	sigemptyset(&thread_queue.tail->t->signals);
 	enable_timer();
@@ -239,7 +244,7 @@ int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg) {
 int thread_kill(thread_t thread, int sig) {
     disable_timer();
     tcb* required_tcb = search_thread(&thread_queue, thread);
-	printf("tid %d\n", required_tcb->tid);
+	// printf("tid %d\n", required_tcb->tid);
     if(required_tcb == NULL){
         printf("Invalid argument to thread_kill\n");
         printf("Thread doesn't exsist\n");
@@ -266,7 +271,7 @@ int thread_join(thread_t thread, void **retval){
     }
     
     if(retval){
-        printf("Stored return value\n");
+        // printf("Stored return value\n");
         *retval = required_tcb->ret_val;
     }
     remove_thread(&thread_queue,thread);

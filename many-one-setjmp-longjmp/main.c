@@ -53,7 +53,7 @@ void* fun2(void* arg) {
 	// sleep(4);
 	// // thread_kill(gettid(), 9);
 	// printf("thread : %d returning\n", gettid());
-	printf("efwdfd\n");
+	// printf("efwdfd\n");
 	while(run){
 		thread_mutex_lock(&m);
 		//thread_spin_lock(&lock);
@@ -84,9 +84,9 @@ int main() {
 	
 	run = 0;
 	thread_join(t1, &ret);
-	printf("%d\n", ret);
+	printf("%d\n", *(int *)ret);
 	thread_join(t2, &ret);
-	printf("%s\n", ret);
+	printf("%s\n", (char *)ret);
 	
 	printf("parent waited successfully\n");
 	printf("\nChecking lock effect:-\n");
