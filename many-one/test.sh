@@ -2,7 +2,7 @@
 
 echo -e "\n\t Preparing tests \n"
 
-make
+# make
 
 echo -e "\n************************************************ \n"
 

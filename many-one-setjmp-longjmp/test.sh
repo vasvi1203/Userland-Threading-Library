@@ -2,7 +2,7 @@
 
 echo -e "\n\t Preparing tests \n"
 
-make
+# make
 
 echo -e "\n************************************************ \n"
 
@@ -29,9 +29,7 @@ echo -e "\n\t sweet test \n"
 
 echo -e "\n\t Testing create join and exit with parameters \n"
 
-echo -e "\t Threads are passed with arguments"
-
-echo -e "\n\t and they return factorial of what they received\n"
+echo -e "\t Threads return square of argument passed to it\n"
 
 
 ./sweet

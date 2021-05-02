@@ -1,6 +1,5 @@
 #define MAX_THREADS 101
 
-// Geeks For Geeks
 typedef struct tcb {
     int tid;
     int child_tid;

@@ -1,5 +1,8 @@
 all: project sweet spin signal stress matrix stress2 create join
 
+run:
+	bash test.sh
+
 project: main.o thread.o queue.o
 	gcc -g main.o thread.o  queue.o -o project
 
