@@ -1,5 +1,7 @@
 #include "thread.h"
 #include<stdio.h>
+#include <sys/mman.h>
+#define STACK 32768
 
 void initQ(queue* q){
     q = (queue*)malloc(sizeof(queue));
@@ -8,7 +10,6 @@ void initQ(queue* q){
 }
 
 void enQ(queue* q, tcb* t) {
-    // printf("%d in enQ\n", t->tid);
     node* tmp = (node*)malloc(sizeof(node));
     tmp->t = t;
     tmp->next = NULL;
@@ -22,7 +23,6 @@ void enQ(queue* q, tcb* t) {
         q->tail = tmp;
     }
     (q->size)++;
-    printQ(q);
 }
 
 tcb* deQ(queue* q) {
@@ -41,15 +41,6 @@ tcb* deQ(queue* q) {
     }
     free(tmp_head);
     return tmp;
-}
-
-void printQ(queue* q){
-    node* tmp = q->head;
-    while(tmp) {
-        // printf("%d\n",tmp->t->tid);
-        tmp = tmp->next;
-    }
-    // printf("end\n");
 }
 
 tcb* search_thread(queue* q, thread_t thread) {
@@ -98,6 +89,7 @@ void remove_thread(queue* q, thread_t thread) {
     }
     else{
         parent->next = tmp->next;
+        munmap(tmp->t->stack, STACK);
         free(tmp);
         (q->size)--;
     }
