@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #define MAX_THREADS 128
 
+// @credit:- https://sites.cs.ucsb.edu/~chris/teaching/cs170/projects/proj2.html
 typedef enum { RUNNING, READY, EXITED, WAITING } STATUS;
 
 typedef struct tcb {
@@ -17,14 +18,15 @@ typedef struct tcb {
     STATUS status;
     void *ret_val;
     sigset_t signals;
+    void *stack;
 } tcb;
 
-typedef struct node{
+typedef struct node {
     tcb* t;
     struct node* next;
 } node;
 
-typedef struct queue{
+typedef struct queue {
     node *head, *tail;
     int size;
 } queue;
@@ -70,10 +72,13 @@ void thread_mutex_lock(mutex *m);
 void thread_mutex_unlock(mutex *m);
 
 void initQ(queue *q);
+
 void enQ(queue *q, tcb *t);
+
 tcb* deQ(queue *q);
-void printQ(queue *q);
+
 tcb* search_thread(queue* q, thread_t thread);
+
 void remove_thread(queue* q, thread_t thread);
 
 #endif
