@@ -1,4 +1,4 @@
-#include "queue.h"
+#include "thread.h"
 #include<stdio.h>
 
 void initQ(queue* q){
@@ -49,6 +49,7 @@ void printQ(queue* q){
         printf("%d\n",tmp->t->tid);
         tmp = tmp->next;
     }
+    printf("end\n");
 }
 
 tcb* search_thread(queue* q, thread_t thread) {

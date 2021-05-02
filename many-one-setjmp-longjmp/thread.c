@@ -12,8 +12,8 @@
 #include <sys/types.h>
 #include <setjmp.h>
 #include <sys/mman.h>
-//#include "thread1.h"
-#include "queue.h"
+#include "thread.h"
+// #include "queue.h"
 #define STACK 32768
 #define SLEEP_SEC 10
 
@@ -39,7 +39,7 @@ void enable_timer(){
 void deq_ready_thread() {
     node *head = thread_queue.head;
 	while(head) {
-		if(head->t->status != EXITED) {
+		if(head->t->status != EXITED && head->t->status != WAITING) {
 			current_thread = head->t;
 			remove_thread(&thread_queue, head->t->tid);
     		break;
@@ -61,7 +61,7 @@ void scheduler(int signum){
 	
 	if(setjmp(current_thread->state) == 0) {
 	
-		if(current_thread->status != EXITED)
+		if(current_thread->status != EXITED && current_thread->status != WAITING)
 			current_thread->status = READY;
 
 		enQ(&thread_queue, current_thread);
@@ -289,13 +289,11 @@ void thread_spin_init(spinlock* spin_lock){
   spin_lock->islocked = 0;
 }
 
-// void thread_mutex_init(mutex* m){
-//   int i;
-//   m->islocked = 0;
-//   thread_spin_init(&m->spin_lock);
-//   // for(i = 0; i < MAX_THREADS; i++) 
-//   //   m->q[i] = 0;      // RUNNABLE
-// }
+void thread_mutex_init(mutex* m){
+  m->islocked = 0;
+  thread_spin_init(&m->spin_lock);
+  initQ(&m->wait_queue);
+}
 
 // @credit:- xv6 code
 void thread_spin_lock(spinlock* spin_lock){
@@ -328,25 +326,9 @@ void thread_spin_unlock(spinlock* spin_lock){
 
 void thread_mutex_block(mutex *m, spinlock *sl) {
   thread_spin_unlock(sl);
-  int thread = gettid();
-  int i, index, sched;
-  // for(i = 0; i < t_index; i++) {
-  //   if(tcb_table[i].tid == thread) {
-  //     index = i;
-  //     break;
-  //   }
-  // }
-
-  // if(index == -1 || index == t_index){
-  //   perror("Invalid argument to mutex block\n");
-  //   exit(0);
-  // }
-
-  // m->q[mutex_index] = tcb_table[index].tid;
-  // mutex_index++;
-  //syscall(SYS_futex, &(tcb_table[index].state), FUTEX_WAIT, 1, NULL, NULL, 0);
-  sched = sched_yield();
-  //printf("sched : %d\n", sched);
+  current_thread->status = WAITING;
+  enQ(&m->wait_queue, current_thread);
+  scheduler(1);
   thread_spin_lock(sl);
 }
 
@@ -359,26 +341,11 @@ void thread_mutex_lock(mutex *m) {
 }
 
 void thread_mutex_unlock(mutex *m) {
-  int i, index;
   thread_spin_lock(&m->spin_lock);
   m->islocked = 0;
-  // if(mutex_index) {
-  //   //printf("%d\n",mutex_index);
-  //   mutex_index--;
-  //   for(i = 0; i < t_index; i++) {
-  //     if(tcb_table[i].tid == m->q[mutex_index]) {
-  //       index = i;
-  //       break;
-  //     }
-  //   }
-
-  //   if(index == -1 || index == t_index){
-  //     perror("Invalid argument to thread kill\n");
-  //     exit(0);
-  //   }
-    
-  //   m->q[mutex_index] = 0;
-  // }
-  
+  tcb *some_thread = deQ(&m->wait_queue);
+  if(some_thread) {
+	some_thread->status = READY;
+  }
   thread_spin_unlock(&m->spin_lock);
-}
+} 

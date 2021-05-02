@@ -1,8 +1,12 @@
+#ifndef THREAD_H
+#define THREAD_H
+
 #include <setjmp.h>
 #include <signal.h>
+#include <stdlib.h>
 #define MAX_THREADS 128
 
-typedef enum { RUNNING, READY, EXITED } STATUS;
+typedef enum { RUNNING, READY, EXITED, WAITING } STATUS;
 
 typedef struct tcb {
     /* returned by thread create */
@@ -15,7 +19,17 @@ typedef struct tcb {
     sigset_t signals;
 } tcb;
 
-typedef struct spinlock{
+typedef struct node{
+    tcb* t;
+    struct node* next;
+} node;
+
+typedef struct queue{
+    node *head, *tail;
+    int size;
+} queue;
+
+typedef struct spinlock {
     int islocked;
 } spinlock;
 
@@ -24,7 +38,7 @@ extern int mutex_index;
 typedef struct mutex {
     int islocked;
     spinlock spin_lock;
-    //int q[MAX_THREADS];         
+    queue wait_queue;         
 } mutex;
 
 typedef long thread_t;
@@ -54,3 +68,12 @@ void thread_mutex_block(mutex *m, spinlock *sl);
 void thread_mutex_lock(mutex *m);
 
 void thread_mutex_unlock(mutex *m);
+
+void initQ(queue *q);
+void enQ(queue *q, tcb *t);
+tcb* deQ(queue *q);
+void printQ(queue *q);
+tcb* search_thread(queue* q, thread_t thread);
+void remove_thread(queue* q, thread_t thread);
+
+#endif
